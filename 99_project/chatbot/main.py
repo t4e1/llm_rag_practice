@@ -1,6 +1,7 @@
 import streamlit as st
 from datetime import datetime
 from rag_system import setup_everything, ask_question
+from langchain_core.messages import HumanMessage, AIMessage
 
 # streamlit 페이지 설정 
 st.set_page_config(page_title="AI Chatbot", page_icon="🐻", layout="wide")
@@ -19,7 +20,6 @@ if "messages" not in st.session_state:
 if "qa_system" not in st.session_state:
     st.session_state.qa_system = None  # RAG 시스템 객체를 저장할 변수
 
-
 PDF_FILES = "../../data/[AI.GOV_해외동향]_2025-1호.pdf"
 
 @st.cache_resource  # 한번 실행하고 결과를 캐시에 저장
@@ -28,8 +28,8 @@ def auto_start_system():
     return qa_system
 
 # AI에게 질문을 전달하고 답변을 받는 함수 
-def get_ai_answer(question):
-    return ask_question(st.session_state.qa_system, question)
+def get_ai_answer(question, chat_history):
+    return ask_question(st.session_state.qa_system, question, chat_history)
 
 # 메인 채팅 인터페이스 
 if not st.session_state.is_ready:
@@ -86,7 +86,14 @@ if st.session_state.is_ready:
         with st.spinner("답변을 생성하는 중...."):
 
             # RAG 와 연결 필요
-            answer = get_ai_answer(question)
+            chat_history = []
+            for msg in st.session_state.messages[:-1]:
+                if msg["role"] == "user":
+                    chat_history.append(HumanMessage(content=msg["content"]))
+                if msg["role"] == "assistant":
+                    chat_history.append(AIMessage(content=msg["content"]))
+
+            answer = get_ai_answer(question, chat_history)
 
         ai_time = datetime.now().strftime("%H:%M:%S")
         ai_msg = {"role":"assistant", "content": answer, "timestamp":ai_time}
