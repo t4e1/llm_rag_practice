@@ -137,7 +137,7 @@ def setup_everything(pdf_file):
 
     return qa_chain
 
-
+ 
 # 질문하고 답변받는 함수
 def ask_question(qa_chain, question, chat_history):
     answer = qa_chain.invoke({"input": question, "chat_history": chat_history})
